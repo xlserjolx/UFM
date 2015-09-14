@@ -1,167 +1,213 @@
 package ua.serhiyshkurin.UFM;
 
-import java.awt.*;
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.*;
 
+public class UnencryptedFileManager extends JFrame{
 
-public class GUI extends JFrame {
+    static ArrayList<Character> tempArray = new ArrayList <Character>();
+    static String password = "myPassword";
+    static String encryptedFileName = "encryptedFile.txt";
+    static InputStream in = null;
+    static OutputStream out = null;
+    static int len = 0;
+    static File encryptedFile = new File(encryptedFileName);
 
-    private JTextField searchAddTextField;
-    private JTextField passwordField;
-    private JButton fileChooseButton;
-    private JButton encryptAndSave;
-    private JButton saveAs;
-    private JButton newEncryptedFileChooseButton;
-    private JButton searchTextButton;
-    private JButton addTextButton;
-    private final JLabel label;
-    public JTextArea fileTextView;
+    static ArrayList<Character> beforeEncryptionCharacters = new ArrayList<Character>(Arrays.asList('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '.', '?', ':', ';', '\"', '\'', '!', '-', '+'));
+    static ArrayList<Character> afterEncryptionCharacters = new ArrayList<Character>(Arrays.asList('q','a','z','x','s','w','e','d','c','v','f','r','t','g','b','n','h','y','u','j','m','p','o','l','i','k','Q','A','Z','X','S','W','E','D','C','V','F','R','T','G','B','N','H','Y','U','J','M','P','O','L','I','K','0','3','8','1','6','5','4','7','2','9','+','-','!','\'','\"',';',':','?','.',','));
 
-    public GUI() {
-        super("Unencrypted File Manager");
-        setLayout(new FlowLayout());
-        setLocationRelativeTo(null);
-        setResizable(false);
+    public static void main(String[] args) {
+        GUI ufm = new GUI();
+        ufm.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        ufm.setSize(300,500);
+        ufm.setVisible(true);
+    }
 
-        fileChooseButton = new JButton("Open encrypted file");
-        add(fileChooseButton);
+    public static ArrayList<String> findRecord(String searchString) {
 
-        newEncryptedFileChooseButton = new JButton("Encrypt new file");
-        add(newEncryptedFileChooseButton);
+        StringBuilder result = new StringBuilder(tempArray.size()-(len+1));
+        for (int i=(len+1); i<tempArray.size(); i++) {
+            result.append(tempArray.get(i));
+        }
+        String[] strings = result.toString().split("\n");
+        ArrayList<String> output = new ArrayList<String>();
+        for(String o:strings){
+            if(o.contains(searchString)){
+                output.add(o);
+                output.add("\n");
+            }
+        }
+        return output;
+    }
 
-        searchAddTextField = new JTextField(20);
-        searchAddTextField.setVisible(false);
-        add(searchAddTextField);
+    public static void addText(String s) {
 
-        addTextButton = new JButton("Add record");
-        addTextButton.setVisible(false);
-        add(addTextButton);
+        //Encrypting array
+        char tempChar;
+        tempArray.add('\n');
+        for(int t = 0; t<s.length(); t++) {
+            tempChar = s.charAt(t);
+            tempArray.add(tempChar);
+        }
+    }
 
-        searchTextButton = new JButton("Find record");
-        searchTextButton.setVisible(false);
-        add(searchTextButton);
+    public static void addToEncryptedFile() {
 
-        label = new JLabel("Chosen file");
-        label.setAlignmentX(CENTER_ALIGNMENT);
-        add(label);
+        // Encrypting array
+        char tempChar;
+        ArrayList<Character> tempArray2 = new ArrayList<Character>();
+        for (Character aTempArray : tempArray) {
+            tempChar = aTempArray;
+            if (beforeEncryptionCharacters.contains(tempChar)) {
+                tempArray2.add(afterEncryptionCharacters.get(beforeEncryptionCharacters.indexOf(tempChar)));
+            } else tempArray2.add(tempChar);
+        }
 
-        passwordField = new JPasswordField(20);
-        passwordField.setText("myNewPassword");
-        add(passwordField);
+        //Adding array to our new file
+        try{
+            out = new BufferedOutputStream(new FileOutputStream(encryptedFile));
+            for (Character aTempArray2 : tempArray2) {
+                out.write(aTempArray2);
+            }
+            out.flush();
+        }catch(Exception e){JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+        finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+            }
+        }
+    }
 
-        fileTextView = new JTextArea(15,20);
-        fileTextView.setVisible(false);
-        fileTextView.setBackground(Color.CYAN);
-        fileTextView.setCaretColor(Color.BLUE);
-        add(fileTextView);
+    public static boolean checkPassword(File eFile) {
 
-        encryptAndSave = new JButton("Encrypt and save");
-        encryptAndSave.setVisible(false);
-        add(encryptAndSave);
+        // Cutting password length from array, converting character to integer and setting it to the new int
+        readEncryptedFile(eFile);
+        len = (int) tempArray.get(0);
 
-        saveAs = new JButton("Save as...");
-        saveAs.setVisible(false);
-        add(saveAs);
+      // Checking password from array
+        char tempArray2[] = new char[len];
+        for(int y = 1;y<=len;y++){
+            tempArray2[y-1] = (tempArray.get(y));
+        }
+        char tempChar2;
+        for(int t = 0; t<len; t++){
+            tempChar2 = tempArray2[t];
+            if(afterEncryptionCharacters.contains(tempChar2)){
+                tempArray2[t]=beforeEncryptionCharacters.get(afterEncryptionCharacters.indexOf(tempChar2));
+            }
+        }
+        return password.equals(String.valueOf(tempArray2));
+    }
 
-        TheHandler handler = new TheHandler();
-        passwordField.addActionListener(handler);
-        fileChooseButton.addActionListener(handler);
-        newEncryptedFileChooseButton.addActionListener(handler);
-        searchTextButton.addActionListener(handler);
-        addTextButton.addActionListener(handler);
-        encryptAndSave.addActionListener(handler);
-        saveAs.addActionListener(handler);
+    public static void decryptTempArray() {
+        //Decrypting array
+        char tempChar;
+        for(int t = 1; t<tempArray.size(); t++){
+            tempChar = tempArray.get(t);
+            if(afterEncryptionCharacters.contains(tempChar)){
+                tempArray.set(t, beforeEncryptionCharacters.get(afterEncryptionCharacters.indexOf(tempChar)));
+            }
+        }
+    }
+
+    private static void readEncryptedFile(File encryptedFile3) {
+
+        try{
+            in = new BufferedInputStream(new FileInputStream(encryptedFile3));
+            int ch;
+           // System.out.println("Previous tempArray text:");
+            while ((ch = in.read()) != -1) {
+                tempArray.add((char)ch);
+            }
+
+            // Checking for tempArray filled
+            for(char s:tempArray){
+                System.out.print(s);
+            }
+
+        }catch(Exception e){JOptionPane.showInputDialog(new JLabel("Error with opening file!"));}
+        finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {JOptionPane.showInputDialog(new JLabel("Error with opening file!"));}
+            }
+        }
+
 
     }
 
-    private class TheHandler implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent event) {
-            if (event.getSource() == fileChooseButton) {
-                UnencryptedFileManager.tempArray.clear();
-                JFileChooser fileOpen = new JFileChooser();
-                int ret = fileOpen.showDialog(null, "Open file");
-                if (ret == JFileChooser.APPROVE_OPTION) {
-                    UnencryptedFileManager.password = passwordField.getText();
-                    if (UnencryptedFileManager.checkPassword(fileOpen.getSelectedFile())) {
-                        label.setText(fileOpen.getSelectedFile().getName());
-                        UnencryptedFileManager.encryptedFile = fileOpen.getSelectedFile();
-                        UnencryptedFileManager.encryptedFileName = fileOpen.getName();
-                        UnencryptedFileManager.len = passwordField.getText().length();
-                        addTextButton.setVisible(true);
-                        searchAddTextField.setVisible(true);
-                        searchTextButton.setVisible(true);
-                        fileTextView.setVisible(true);
-                        passwordField.setVisible(false);
-                        encryptAndSave.setVisible(true);
-                        UnencryptedFileManager.decryptTempArray();
-                        for (int i = passwordField.getText().length()+1;i<UnencryptedFileManager.tempArray.size(); i++) {
-                            char s = UnencryptedFileManager.tempArray.get(i);
-                            fileTextView.append(String.valueOf(s));
-                        }
-                        saveAs.setVisible(true);
+    static void readUnencryptedFile(File unencryptedFile6) {
+        try{
+            in = new BufferedInputStream(new FileInputStream(unencryptedFile6));
+            int ch;
+            tempArray.add((char) password.length());
 
-                        JOptionPane.showMessageDialog(new JLabel("Done"), "Password correct");
-                    } else {
-                        JOptionPane.showMessageDialog(new JLabel("Error"), "Incorrect password");
-                    }
-                }
-            } else if (event.getSource() == addTextButton) {
-                UnencryptedFileManager.addText(searchAddTextField.getText());
-                fileTextView.setText("");
-                for (int i = passwordField.getText().length()+1;i<UnencryptedFileManager.tempArray.size(); i++) {
-                    char s = UnencryptedFileManager.tempArray.get(i);
-                    fileTextView.append(String.valueOf(s));
-                }
-            } else if (event.getSource() == searchTextButton) {
-                fileTextView.setText("");
-                for(String o:UnencryptedFileManager.findRecord(searchAddTextField.getText())){
-                        fileTextView.append(o);
-                }
-            } else if (event.getSource() == newEncryptedFileChooseButton) {
-                UnencryptedFileManager.tempArray.clear();
-                JFileChooser fileOpen2 = new JFileChooser();
-                    int ret2 = fileOpen2.showDialog(null, "Open file");
-                    if (ret2 == JFileChooser.APPROVE_OPTION) {
-                        UnencryptedFileManager.password = passwordField.getText();
-                        try {
-                            UnencryptedFileManager.readUnencryptedFile(fileOpen2.getSelectedFile());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        UnencryptedFileManager.len = passwordField.getText().length();
-                        label.setText(fileOpen2.getSelectedFile().getName());
-                        addTextButton.setVisible(true);
-                        searchAddTextField.setVisible(true);
-                        searchTextButton.setVisible(true);
-                        fileChooseButton.setVisible(false);
-                        passwordField.setVisible(false);
-                        fileTextView.setVisible(true);
-                        for (int i = passwordField.getText().length()+1;i<UnencryptedFileManager.tempArray.size(); i++) {
-                            char s = UnencryptedFileManager.tempArray.get(i);
-                            fileTextView.append(String.valueOf(s));
-                        }
-                        encryptAndSave.setVisible(true);
-                        saveAs.setVisible(true);
-                    }
+            for(char c: password.toCharArray()){
+                tempArray.add(c);
+            }
 
-            } else if(event.getSource() == encryptAndSave){
-                    UnencryptedFileManager.addToEncryptedFile();
-            }else if(event.getSource() == saveAs){
-                JFileChooser fileSaveAs = new JFileChooser();
-                int ret3 = fileSaveAs.showSaveDialog(null);
-                if (ret3 == JFileChooser.APPROVE_OPTION) {
-                    try {
-                        UnencryptedFileManager.writeNewFile(fileSaveAs.getCurrentDirectory().getAbsolutePath(), fileSaveAs.getSelectedFile().getName());
-                        label.setText(fileSaveAs.getSelectedFile().getName());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }else JOptionPane.showMessageDialog(new JLabel("Error"), "Unknown command");
+            while ((ch = in.read()) != -1) {
+                tempArray.add((char)ch);
+            }
 
+            // Checking for tempArray filled
+            for(char s:tempArray){
+                System.out.print(s);
+            }
+
+
+        }catch(Exception e){
+            System.out.println("Error with reading unencrypted file");
+            e.printStackTrace();
+        }
+        finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void writeNewFile(String absolutePath, String fileName) {
+        // Encrypting array
+        char tempChar;
+        ArrayList<Character> tempArray2 = new ArrayList<Character>();
+        for (Character aTempArray : tempArray) {
+            tempChar = aTempArray;
+            if (beforeEncryptionCharacters.contains(tempChar)) {
+                tempArray2.add(afterEncryptionCharacters.get(beforeEncryptionCharacters.indexOf(tempChar)));
+
+            } else tempArray2.add(tempChar);
+        }
+
+        //Adding array to our new file
+        try{
+            out = new BufferedOutputStream(new FileOutputStream(new File(absolutePath)+"\\"+fileName));
+            for (Character aTempArray2 : tempArray2) {
+                out.write(aTempArray2);
+            }
+            out.flush();
+        }catch(Exception e){JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+        finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+            }
         }
     }
 }
