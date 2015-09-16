@@ -78,12 +78,12 @@ public class UnencryptedFileManager extends JFrame{
                 out.write(aTempArray2);
             }
             out.flush();
-        }catch(Exception e){JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+        }catch(Exception e){JOptionPane.showMessageDialog(new JLabel(),"Error with writing to the file!");}
         finally {
             if (out != null) {
                 try {
                     out.close();
-                } catch (IOException e) {JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+                } catch (IOException e) {JOptionPane.showMessageDialog(new JLabel(), "Error with writing to the file!");}
             }
         }
     }
@@ -135,12 +135,12 @@ public class UnencryptedFileManager extends JFrame{
                 System.out.print(s);
             }
 
-        }catch(Exception e){JOptionPane.showInputDialog(new JLabel("Error with opening file!"));}
+        }catch(Exception e){JOptionPane.showMessageDialog(new JLabel(), "Error with opening file!");}
         finally {
             if (in != null) {
                 try {
                     in.close();
-                } catch (IOException e) {JOptionPane.showInputDialog(new JLabel("Error with opening file!"));}
+                } catch (IOException e) {JOptionPane.showMessageDialog(new JLabel(), "Error with opening file!");}
             }
         }
 
@@ -168,8 +168,7 @@ public class UnencryptedFileManager extends JFrame{
 
 
         }catch(Exception e){
-            System.out.println("Error with reading unencrypted file");
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(new JLabel(),"Error with reading file!");
         }
         finally {
             if (in != null) {
@@ -201,13 +200,14 @@ public class UnencryptedFileManager extends JFrame{
                 out.write(aTempArray2);
             }
             out.flush();
-        }catch(Exception e){JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+        }catch(Exception e){JOptionPane.showMessageDialog(new JLabel(), "Error with writing to the file!");}
         finally {
             if (out != null) {
                 try {
                     out.close();
-                } catch (IOException e) {JOptionPane.showInputDialog(new JLabel("Error with writing to the file!"));}
+                } catch (IOException e) {JOptionPane.showMessageDialog(new JLabel(), "Error with writing to the file!");}
             }
         }
     }
 }
+
